@@ -1,0 +1,35 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	ibc "github.com/cosmos/cosmos-sdk/x/ibc"
+)
+
+func main() {
+	// Создаем объект клиента Cosmos SDK для первого блокчейна
+	clientA := sdk.NewClient("blockchainA", "tcp://localhost:26657")
+
+	// Создаем объект клиента Cosmos SDK для второго блокчейна
+	clientB := sdk.NewClient("blockchainB", "tcp://localhost:36657")
+
+	// Создаем объект IBC модуля
+	ibcModule := ibc.NewIBCMiddleware(clientA)
+
+	// Создаем IBC пакет
+	packet := ibc.Packet{
+		Source:      ibc.NewChainID("blockchainA"),
+		Destination: ibc.NewChainID("blockchainB"),
+		Data:        []byte("hello, blockchain B!"),
+	}
+
+	// Отправляем IBC пакет из первого блокчейна во второй
+	if err := ibcModule.SendPacket(clientB, packet); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to send IBC packet: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("IBC packet sent successfully!")
+}
